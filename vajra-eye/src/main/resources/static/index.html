@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VAJRA-EYE Command</title>
+  <link rel="stylesheet" href="/css/app.css?v=7" />
+</head>
+<body>
+  <div id="login-view" class="login-wrap">
+    <div class="login-card">
+      <div class="login-mark">VE</div>
+      <h1>VAJRA-EYE</h1>
+      <p class="sub">Edge command console · MCA laboratory</p>
+      <form id="login-form" method="post" action="/login" autocomplete="on">
+      <label>Username</label>
+      <input id="user" name="username" autocomplete="username" value="localhost" />
+      <label>Password</label>
+      <input id="pass" name="password" type="password" autocomplete="current-password" value="root" />
+      <button id="login-btn" class="btn primary" type="submit">Authenticate</button>
+      <p id="login-err" class="err" hidden></p>
+      <p class="hint">Username <code>localhost</code> · password <code>root</code></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-view" hidden>
+    <aside class="rail">
+      <div class="brand">
+        <span class="logo">VE</span>
+        <div>
+          <strong>VAJRA-EYE</strong>
+          <small>Command layer</small>
+        </div>
+      </div>
+      <nav>
+        <button data-view="dash" class="active">Live dashboard</button>
+        <button data-view="alerts">Threat alerts</button>
+        <button data-view="evidence">Keyframe evidence</button>
+        <button data-view="admin">Policy</button>
+        <button data-view="audit">Audit log</button>
+      </nav>
+      <div class="rail-foot">
+        <span id="who"></span>
+        <button id="logout" type="button">Sign out</button>
+      </div>
+    </aside>
+
+    <main>
+      <header class="top">
+        <div>
+          <h2 id="view-title">Live dashboard</h2>
+          <p id="view-sub">Perception · motion gate · COCO/YOLO · AES-GCM notify</p>
+        </div>
+        <div class="top-meta">
+          <span id="clock"></span>
+          <span id="pipe-badge" class="badge">STARTING</span>
+        </div>
+      </header>
+
+      <section id="view-dash" class="panel">
+        <div class="kpis">
+          <article><small>Camera</small><b id="kpi-cam">—</b></article>
+          <article><small>Frames</small><b id="kpi-frames">0</b></article>
+          <article><small>Keyframes</small><b id="kpi-keys">0</b></article>
+          <article><small>Alerts</small><b id="kpi-alerts">0</b></article>
+        </div>
+        <div class="dash-grid">
+          <div class="live-card">
+            <div class="live-head">
+              <span>Live optical feed</span>
+              <div class="cam-controls">
+                <button type="button" id="btn-start" class="btn go">Start capture</button>
+                <button type="button" id="btn-stop" class="btn stop">Stop capture</button>
+                <span id="motion-pill" class="pill idle">IDLE</span>
+              </div>
+            </div>
+            <div class="viewport">
+              <img id="live" alt="Live snapshot" />
+              <div id="live-empty" class="empty">Waiting for first frame…</div>
+            </div>
+          </div>
+          <div class="side-stack">
+            <div class="info-card">
+              <h3>Pipeline</h3>
+              <ul class="steps">
+                <li>RTSP / webcam ingest</li>
+                <li>BT.601 luma + Gaussian 21×21</li>
+                <li>θ<sub>pixel</sub> / θ<sub>area</sub> keyframe gate</li>
+                <li>COCO/YOLO weapon classes</li>
+                <li>Alert if it can harm a living human</li>
+              </ul>
+            </div>
+            <div class="info-card">
+              <h3>Node</h3>
+              <p>Source <b id="src">—</b></p>
+              <p>Model <b id="model">—</b></p>
+              <p>Motion area <b id="marea">—</b> px</p>
+              <p>Camera sees <b id="seen">—</b></p>
+              <p>Updated <b id="upd">—</b></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-alerts" class="panel" hidden>
+        <div id="alert-banner" class="alert-banner">Loading detector…</div>
+        <p id="seen-line" class="alert-banner">Camera sees: —</p>
+        <div class="alert-layout">
+          <article class="info-card">
+            <h3>What this camera labels</h3>
+            <p class="hint" style="margin: .6rem 1rem;">The live feed prints the same names: person, face, hand, knife, and other objects. A threat alert is sent only for weapons that can harm a living human (knife, scissors, fork, bat, gun).</p>
+            <table class="weapon-table">
+              <thead>
+                <tr><th>Label</th><th>Kind</th><th>Alert</th><th>On this camera</th></tr>
+              </thead>
+              <tbody id="weapon-rows"></tbody>
+            </table>
+          </article>
+          <article class="info-card">
+            <h3>Dispatched threat alerts</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>ID</th><th>Weapon</th><th>P</th><th>Camera</th><th>Channel</th><th>Time</th><th></th></tr>
+                </thead>
+                <tbody id="alert-rows">
+                  <tr><td colspan="7">Waiting for first scan…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="view-evidence" class="panel" hidden>
+        <div id="ev-grid" class="ev-grid"></div>
+      </section>
+
+      <section id="view-admin" class="panel" hidden>
+        <form id="policy-form" class="policy">
+          <label>Pixel threshold θ<sub>pixel</sub>
+            <input name="pixelThreshold" type="number" min="1" max="80" />
+          </label>
+          <label>Min contour area θ<sub>area</sub>
+            <input name="minArea" type="number" min="100" max="50000" />
+          </label>
+          <label>Pan reject fraction
+            <input name="panFraction" type="number" min="0.1" max="1" step="0.05" />
+          </label>
+          <label>Min YOLO probability (use 0.20 for the webcam)
+            <input name="minProbability" type="number" min="0.1" max="0.99" step="0.01" />
+          </label>
+          <label>Alert cooldown (ms)
+            <input name="cooldownMs" type="number" min="1000" max="120000" step="1000" />
+          </label>
+          <button type="submit" class="btn primary" id="save-policy">Save policy</button>
+          <p id="policy-msg" class="ok" hidden></p>
+        </form>
+      </section>
+
+      <section id="view-audit" class="panel" hidden>
+        <table>
+          <thead>
+            <tr><th>ID</th><th>User</th><th>Action</th><th>Detail</th><th>Time</th></tr>
+          </thead>
+          <tbody id="audit-rows"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <script src="js/app.js?v=7"></script>
+</body>
+</html>
